@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeRent - Cổng Hỗ Trợ Cư Dân (User View)</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #ef4444;
+      --unread-border: #3b82f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px 16px; line-height: 1.5; padding-bottom: 90px; }
+    .container { max-width: 800px; margin: 0 auto; }
+
+    header {
+      background: var(--card-bg);
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+    }
+    h1 { font-size: 18px; color: var(--primary); }
+    .user-tag { background: #e0e7ff; color: var(--primary); padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 20px; }
+    .card h2 { font-size: 16px; margin-bottom: 14px; border-bottom: 1.5px solid var(--border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 5px; color: #334155; }
+    input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; background: #fff; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    button { background: var(--primary); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    button:hover { background: var(--primary-dark); }
+
+    /* Danh sách ticket trên trang */
+    .ticket-list { display: flex; flex-direction: column; gap: 14px; }
+    .ticket-item {
+      position: relative;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ticket-item.has-unread { border-color: var(--unread-border); background: #f8faff; }
+    .badge-unread {
+      position: absolute;
+      top: -8px;
+      right: 14px;
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.35);
+    }
+
+    .ticket-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding-right: 70px; }
+    .ticket-title { font-weight: 700; font-size: 14.5px; }
+    .ticket-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    
+    .status { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .status-pending { background: #fef3c7; color: var(--warning); }
+    .status-in_progress { background: #e0f2fe; color: var(--primary); }
+    .status-resolved { background: #dcfce7; color: var(--success); }
+
+    /* ================= NÚT BẬT CHAT NỔI MESSENGER GÓC DƯỚI ================= */
+    .chat-widget-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      cursor: pointer;
+      z-index: 999;
+      transition: transform 0.2s ease;
+    }
+    .chat-widget-btn:hover { transform: scale(1.05); }
+    .chat-widget-btn svg { width: 28px; height: 28px; fill: white; }
+
+    .widget-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+    }
+
+    /* Popup Hộp Chat Dọc (Dark Theme chuẩn ảnh mẫu) */
+    .mini-chat-popup {
+      position: fixed;
+      bottom: 92px;
+      right: 24px;
+      width: 350px;
+      height: 520px;
+      background: #111827;
+      color: #f3f4f6;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+      border: 1px solid #374151;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .mini-chat-header {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 14px 16px;
+      font-size: 14.5px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #374151;
+    }
+    .back-btn { cursor: pointer; font-size: 16px; margin-right: 8px; display: inline-flex; align-items: center; }
+    .mini-chat-close { cursor: pointer; font-size: 18px; color: #9ca3af; }
+    .mini-chat-close:hover { color: #fff; }
+
+    /* DANH SÁCH HỘI THOẠI XẾP DỌC */
+    .user-list-vertical {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      cursor: pointer;
+      gap: 12px;
+      transition: background 0.15s ease;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.4);
+    }
+    .user-row:hover { background: #1f2937; }
+    
+    .avatar-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .avatar-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #374151;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .online-dot {
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      width: 11px;
+      height: 11px;
+      background: #22c55e;
+      border: 2px solid #111827;
+      border-radius: 50%;
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .user-name { font-size: 14px; font-weight: 600; color: #f9fafb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-preview { font-size: 12.5px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-row.unread .user-name { color: #fff; font-weight: 700; }
+    .user-row.unread .msg-preview { color: #60a5fa; font-weight: 500; }
+
+    .unread-pill {
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+    }
+
+    /* KHUNG MÀN HÌNH CHAT CHI TIẾT */
+    .chat-view {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .chat-messages-container {
+      flex: 1;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #111827;
+    }
+    .chat-bubble { max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; }
+    .chat-bubble.renter { align-self: flex-end; background: var(--primary); color: #ffffff; }
+    .chat-bubble.manager { align-self: flex-start; background: #1f2937; color: #f3f4f6; border: 1px solid #374151; }
+    .chat-sender { font-size: 10px; font-weight: bold; opacity: 0.75; margin-bottom: 2px; }
+
+    .chat-input-bar {
+      padding: 10px 14px;
+      border-top: 1px solid #374151;
+      background: #1f2937;
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-bar input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #111827;
+      color: #fff;
+      outline: none;
+    }
+    .chat-input-bar button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>HomeRent - Cổng Hỗ Trợ Cư Dân</h1>
+      <p style="font-size: 12.5px; color: var(--text-muted);">Gửi phản ánh & Chat trực tiếp với Ban Quản Lý</p>
+    </div>
+    <span class="user-tag">Phòng: P.302 (Lê Hoàng Nam)</span>
+  </header>
+
+  <!-- FORM GỬI YÊU CẦU MỚI -->
+  <div class="card">
+    <h2>Gửi Yêu Cầu Hỗ Trợ / Khiếu Nại Sự Cố Mới</h2>
+    <form id="supportForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phòng của bạn</label>
+          <input type="text" id="custRoom" value="P.302" readonly style="background: #f1f5f9; cursor: not-allowed;">
+        </div>
+        <div class="form-group">
+          <label>Danh mục sự cố *</label>
+          <select id="custCategory">
+            <option value="Sự cố Điện / Nước">Sự cố Điện / Nước</option>
+            <option value="Hỏng hóc thiết bị">Hỏng hóc thiết bị</option>
+            <option value="Hợp đồng & Tiền cọc">Hợp đồng & Tiền cọc</option>
+            <option value="Vệ sinh & An ninh">Vệ sinh & An ninh</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tiêu đề tóm tắt *</label>
+        <input type="text" id="custTitle" placeholder="Ví dụ: Vòi nước bồn rửa mặt bị gãy" required>
+      </div>
+      <div class="form-group">
+        <label>Chi tiết sự cố *</label>
+        <textarea id="custDesc" rows="2" placeholder="Ghi chi tiết thời điểm bị hỏng hoặc yêu cầu cụ thể..." required></textarea>
+      </div>
+      <button type="submit" style="width: 100%;">Gửi Đến Ban Quản Lý</button>
+    </form>
+  </div>
+
+  <!-- DANH SÁCH LỊCH SỬ KHIẾU NẠI TRANG CHÍNH -->
+  <div class="card">
+    <h2>
+      <span>Lịch Sử Khiếu Nại Của Phòng Bạn (P.302)</span>
+      <span style="font-size: 11.5px; color: var(--text-muted); font-weight: normal;">* Nhấn để mở chat nhanh góc phải</span>
+    </h2>
+    <div id="userTicketContainer" class="ticket-list"></div>
+  </div>
+</div>
+
+<!-- ================= NÚT BẬT MESSENGER GÓC DƯỚI BÊN PHẢI ================= -->
+<div class="chat-widget-btn" onclick="toggleMiniChat()">
+  <span class="widget-badge" id="totalUnreadBadge" style="display: none;">0</span>
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg>
+</div>
+
+<!-- ================= HỘP CHAT GIAO DIỆN DỌC (DARK THEME) ================= -->
+<div class="mini-chat-popup" id="miniChatPopup">
+  <div class="mini-chat-header">
+    <div style="display: flex; align-items: center;">
+      <span class="back-btn" id="backToListBtn" style="display: none;" onclick="showUserList()">←</span>
+      <span id="miniChatTitle">Tin nhắn hỗ trợ (BQL)</span>
+    </div>
+    <span class="mini-chat-close" onclick="toggleMiniChat()">✕</span>
+  </div>
+
+  <!-- VIEW 1: DANH SÁCH CÁC KÊNH HỖ TRỢ XẾP DỌC -->
+  <div class="user-list-vertical" id="userListVertical"></div>
+
+  <!-- VIEW 2: MÀN HÌNH CHAT CHI TIẾT -->
+  <div class="chat-view" id="chatView">
+    <div class="chat-messages-container" id="chatMessagesBox"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="miniChatInput" placeholder="Nhắn tin với BQL..." onkeydown="if(event.key==='Enter') sendMiniChatMessage()">
+      <button onclick="sendMiniChatMessage()">Gửi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DEFAULT_DATA = [
+    {
+      id: 927,
+      room: "P.302",
+      sender: "Lê Hoàng Nam",
+      category: "Sự cố Điện / Nước",
+      title: "vòi nước rò rỉ",
+      desc: "vòi nước rò rỉ ở chân van",
+      status: "Pending",
+      unreadManager: 1,
+      unreadCustomer: 0,
+      chats: [
+        { sender: "renter", name: "Khách (Nam)", text: "vòi nước phòng em rò rỉ từ tối qua ạ" }
+      ]
+    },
+    {
+      id: 101,
+      room: "P.302",
+      sender: "Lê Hoàng Nam",
+      category: "Sự cố Điện / Nước",
+      title: "Vòi sen phòng tắm bị rò rỉ nước",
+      desc: "Vòi sen rò chân van từ tối qua, nhờ ban quản lý kiểm tra sớm.",
+      status: "In_Progress",
+      unreadManager: 0,
+      unreadCustomer: 1,
+      chats: [
+        { sender: "renter", name: "Khách (Nam)", text: "Vòi sen rò chân van từ tối qua ạ" },
+        { sender: "manager", name: "BQL (Kỹ thuật)", text: "Chào bạn Nam, bộ phận kỹ thuật sẽ qua sửa lúc 14h hôm nay nhé." }
+      ]
+    }
+  ];
+
+  function getTickets() {
+    const data = localStorage.getItem('homerent_tickets');
+    return data ? JSON.parse(data) : DEFAULT_DATA;
+  }
+
+  function saveTickets(data) {
+    localStorage.setItem('homerent_tickets', JSON.stringify(data));
+  }
+
+  let selectedTicketId = null;
+  let isMiniChatOpen = false;
+
+  // 1. RENDER DANH SÁCH LỊCH SỬ KHIẾU NẠI TRÊN TRANG CHÍNH
+  function renderUserTickets() {
+    const container = document.getElementById('userTicketContainer');
+    container.innerHTML = "";
+    const tickets = getTickets().filter(t => t.room === "P.302");
+
+    updateUnreadCount(tickets);
+
+    if (tickets.length === 0) {
+      container.innerHTML = "<p style='color: var(--text-muted); font-size: 13px;'>Bạn chưa có khiếu nại nào.</p>";
+      return;
+    }
+
+    tickets.forEach(t => {
+      const isUnread = t.unreadCustomer > 0;
+      const unreadBadge = isUnread ? `<span class="badge-unread">● ${t.unreadCustomer} phản hồi mới</span>` : '';
+
+      const item = document.createElement('div');
+      item.className = `ticket-item ${isUnread ? 'has-unread' : ''}`;
+      item.onclick = () => openChatDetail(t.id);
+
+      item.innerHTML = `
+        ${unreadBadge}
+        <div class="ticket-header">
+          <span class="ticket-title">#TK${t.id} - ${t.title}</span>
+          ${getStatusBadge(t.status)}
+        </div>
+        <div class="ticket-meta">Phân loại: <strong>${t.category}</strong></div>
+        <p style="font-size: 12.5px; color: #475569;">${t.desc}</p>
+        <span style="font-size: 11.5px; color: var(--primary); font-weight: 600; margin-top: 6px; display: inline-block;">💬 Bấm để chat chi tiết với Ban Quản Lý</span>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function getStatusBadge(status) {
+    if (status === 'Pending') return '<span class="status status-pending">Chờ xử lý</span>';
+    if (status === 'In_Progress') return '<span class="status status-in_progress">Đang xử lý</span>';
+    return '<span class="status status-resolved">Đã hoàn thành</span>';
+  }
+
+  // 2. KHUNG CHAT DỌC GÓC DƯỚI (MESSENGER DARK THEME)
+  function toggleMiniChat() {
+    isMiniChatOpen = !isMiniChatOpen;
+    const popup = document.getElementById('miniChatPopup');
+    popup.style.display = isMiniChatOpen ? 'flex' : 'none';
+
+    if (isMiniChatOpen) {
+      showUserList();
+    }
+  }
+
+  // Hiển thị danh sách dọc theo kịch bản hỗ trợ của khách thuê
+  function showUserList() {
+    document.getElementById('userListVertical').style.display = 'flex';
+    document.getElementById('chatView').style.display = 'none';
+    document.getElementById('backToListBtn').style.display = 'none';
+    document.getElementById('miniChatTitle').innerText = 'Hộp thư hỗ trợ';
+
+    const container = document.getElementById('userListVertical');
+    container.innerHTML = "";
+    const tickets = getTickets().filter(t => t.room === "P.302");
+
+    if (tickets.length === 0) {
+      container.innerHTML = "<p style='color: #9ca3af; font-size: 13px; text-align: center; margin-top: 30px;'>Chưa có hội thoại nào.</p>";
+      return;
+    }
+
+    tickets.forEach(t => {
+      const isUnread = t.unreadCustomer > 0;
+      const lastMsg = t.chats && t.chats.length > 0 ? t.chats[t.chats.length - 1].text : t.desc;
+
+      const row = document.createElement('div');
+      row.className = `user-row ${isUnread ? 'unread' : ''}`;
+      row.onclick = () => openChatDetail(t.id);
+
+      row.innerHTML = `
+        <div class="avatar-wrap">
+          <div class="avatar-img">BQL</div>
+          <span class="online-dot"></span>
+        </div>
+        <div class="user-info">
+          <div class="user-name-row">
+            <span class="user-name">BQL - ${t.title} (#TK${t.id})</span>
+            ${isUnread ? `<span class="unread-pill">${t.unreadCustomer}</span>` : ''}
+          </div>
+          <div class="msg-preview">${lastMsg}</div>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // Mở màn hình chat chi tiết với Ban Quản Lý
+  function openChatDetail(id) {
+    selectedTicketId = id;
+    if (!isMiniChatOpen) {
+      isMiniChatOpen = true;
+      document.getElementById('miniChatPopup').style.display = 'flex';
+    }
+
+    // Đánh dấu đã đọc tin nhắn của khách
+    let tickets = getTickets();
+    let currentTicket = tickets.find(t => t.id === id);
+    if (currentTicket) {
+      currentTicket.unreadCustomer = 0;
+      saveTickets(tickets);
+    }
+
+    document.getElementById('userListVertical').style.display = 'none';
+    document.getElementById('chatView').style.display = 'flex';
+    document.getElementById('backToListBtn').style.display = 'inline-flex';
+    document.getElementById('miniChatTitle').innerText = `BQL: ${currentTicket.title}`;
+
+    renderMessages(currentTicket);
+    renderUserTickets();
+  }
+
+  function renderMessages(ticket) {
+    const box = document.getElementById('chatMessagesBox');
+    box.innerHTML = "";
+
+    ticket.chats.forEach(c => {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${c.sender}`;
+      bubble.innerHTML = `
+        <div class="chat-sender">${c.name}</div>
+        ${c.text}
+      `;
+      box.appendChild(bubble);
+    });
+
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sendMiniChatMessage() {
+    const input = document.getElementById('miniChatInput');
+    const text = input.value.trim();
+    if (!text || !selectedTicketId) return;
+
+    let tickets = getTickets();
+    let t = tickets.find(x => x.id === selectedTicketId);
+    if (t) {
+      t.chats.push({ sender: "renter", name: "Khách (Nam)", text: text });
+      t.unreadManager = (t.unreadManager || 0) + 1; // Báo tin mới sang Admin
+      saveTickets(tickets);
+      input.value = "";
+      renderMessages(t);
+      renderUserTickets();
+    }
+  }
+
+  function updateUnreadCount(tickets) {
+    const total = tickets.reduce((sum, t) => sum + (t.unreadCustomer || 0), 0);
+    const badge = document.getElementById('totalUnreadBadge');
+    if (total > 0) {
+      badge.innerText = total;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Khách gửi phiếu mới
+  document.getElementById('supportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const title = document.getElementById('custTitle').value.trim();
+    const desc = document.getElementById('custDesc').value.trim();
+    const cat = document.getElementById('custCategory').value;
+
+    let tickets = getTickets();
+    const newId = Math.floor(100 + Math.random() * 900);
+    const newTicket = {
+      id: newId,
+      room: "P.302",
+      sender: "Lê Hoàng Nam",
+      category: cat,
+      title: title,
+      desc: desc,
+      status: "Pending",
+      unreadManager: 1, // Thông báo ngay sang Admin
+      unreadCustomer: 0,
+      chats: [
+        { sender: "renter", name: "Khách (Nam)", text: desc }
+      ]
+    };
+
+    tickets.unshift(newTicket);
+    saveTickets(tickets);
+    renderUserTickets();
+    openChatDetail(newId);
+
+    document.getElementById('custTitle').value = "";
+    document.getElementById('custDesc').value = "";
+  });
+
+  // Lắng nghe realtime từ Admin
+  window.addEventListener('storage', () => {
+    renderUserTickets();
+    if (isMiniChatOpen) {
+      if (document.getElementById('chatView').style.display === 'flex' && selectedTicketId) {
+        const cur = getTickets().find(t => t.id === selectedTicketId);
+        if (cur) renderMessages(cur);
+      } else {
+        showUserList();
+      }
+    }
+  });
+
+  if (!localStorage.getItem('homerent_tickets')) saveTickets(DEFAULT_DATA);
+  renderUserTickets();
+</script>
+
+</body>
+</html>
